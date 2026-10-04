@@ -8,10 +8,11 @@ type RevealProps = {
   className?: string;
   /** Delay in ms, useful for staggering siblings */
   delay?: number;
+  scale?: boolean;
 };
 
 /** Fades and lifts content into view once, when it first enters the viewport. */
-export function Reveal({ children, className, delay = 0 }: RevealProps) {
+export function Reveal({ children, className, delay = 0, scale = false }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function Reveal({ children, className, delay = 0 }: RevealProps) {
   return (
     <div
       ref={ref}
-      className={cn("reveal", className)}
+      className={cn("reveal", scale && "reveal-scale", className)}
       style={delay ? ({ "--reveal-delay": `${delay}ms` } as React.CSSProperties) : undefined}
     >
       {children}

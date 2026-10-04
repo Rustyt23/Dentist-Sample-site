@@ -1,4 +1,6 @@
 import { Clock, MapPin, MessageCircle, Navigation, Phone } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { clinic } from "@/lib/data/clinic";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -6,9 +8,9 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Accent, SectionHeading } from "@/components/ui/SectionHeading";
 import { MapPlaceholder } from "./MapPlaceholder";
 
-export function ClinicDetails() {
+export function ClinicDetails({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex h-full flex-col rounded-[2rem] bg-white p-7 shadow-soft ring-1 ring-navy-100 sm:p-9">
+    <div className={cn("flex h-full flex-col", compact ? "py-2" : "rounded-[2rem] bg-white p-7 shadow-soft ring-1 ring-navy-100 sm:p-9")}>
       <ul className="space-y-7">
         <li className="flex gap-4">
           <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600">
@@ -60,6 +62,14 @@ export function ClinicDetails() {
         </li>
       </ul>
 
+      {compact ? (
+        <div className="mt-auto flex flex-wrap items-center gap-6 pt-8">
+          <ButtonLink href="/book">Book Appointment</ButtonLink>
+          <a href={clinic.whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 py-2 text-sm font-semibold text-brand-700 hover:text-navy-900">
+            <MessageCircle className="size-4" aria-hidden />WhatsApp
+          </a>
+        </div>
+      ) : (
       <div className="mt-auto grid gap-3 pt-9 sm:grid-cols-3">
         <ButtonLink href={clinic.phoneHref} size="sm" className="w-full">
           <Phone className="size-4" aria-hidden />
@@ -74,34 +84,28 @@ export function ClinicDetails() {
           Directions
         </ButtonLink>
       </div>
+      )}
     </div>
   );
 }
 
 export function VisitClinic() {
   return (
-    <section id="visit" className="px-2 sm:px-4">
-      <div className="rounded-[2.5rem] bg-mist-50 py-20 ring-1 ring-mist-100 sm:py-24">
-        <Container>
-          <SectionHeading
-            eyebrow="Visit SmileCare"
-            title={
-              <>
-                Easy to reach, <Accent>easy to love.</Accent>
-              </>
-            }
-            description="Two minutes from Indiranagar Metro, with free parking for patients at the rear of the building."
-          />
-          <div className="mt-12 grid gap-5 lg:grid-cols-5">
-            <Reveal className="lg:col-span-2">
-              <ClinicDetails />
-            </Reveal>
-            <Reveal delay={120} className="lg:col-span-3">
-              <MapPlaceholder className="h-[22rem] sm:h-[28rem] lg:h-full lg:min-h-[32rem]" />
-            </Reveal>
-          </div>
-        </Container>
-      </div>
+    <section id="visit">
+      <Container>
+        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+          <SectionHeading align="left" size="quiet" eyebrow="Visit SmileCare" title={<>Your next smile starts <Accent>here.</Accent></>} description="Find us in Indiranagar, with free parking for patients." />
+          <Link href={clinic.directionsHref} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-2 py-2 text-sm font-semibold text-brand-700 hover:text-navy-900">
+            <Navigation className="size-4" aria-hidden />Get Directions
+          </Link>
+        </div>
+        <div className="mt-10 grid gap-10 lg:grid-cols-5 lg:gap-16">
+          <Reveal className="lg:col-span-2"><ClinicDetails compact /></Reveal>
+          <Reveal delay={120} className="lg:col-span-3">
+            <MapPlaceholder className="h-[22rem] sm:h-[26rem] lg:h-full lg:min-h-[28rem]" />
+          </Reveal>
+        </div>
+      </Container>
     </section>
   );
 }

@@ -8,6 +8,7 @@ type SectionHeadingProps = {
   align?: "left" | "center";
   tone?: "dark" | "light";
   className?: string;
+  size?: "default" | "quiet";
 };
 
 export function Eyebrow({ children, tone = "dark" }: { children: React.ReactNode; tone?: "dark" | "light" }) {
@@ -45,6 +46,7 @@ export function SectionHeading({
   align = "center",
   tone = "dark",
   className,
+  size = "default",
 }: SectionHeadingProps) {
   return (
     <Reveal
@@ -57,7 +59,8 @@ export function SectionHeading({
       <Eyebrow tone={tone}>{eyebrow}</Eyebrow>
       <h2
         className={cn(
-          "text-3xl leading-[1.12] font-semibold tracking-tight sm:text-4xl lg:text-[2.75rem]",
+          "leading-[1.12] font-semibold tracking-tight",
+          size === "quiet" ? "text-2xl sm:text-3xl lg:text-4xl" : "text-3xl sm:text-4xl lg:text-[2.75rem]",
           tone === "light" && "text-white",
         )}
       >

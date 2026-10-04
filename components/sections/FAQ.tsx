@@ -1,25 +1,31 @@
 import Link from "next/link";
-import { ArrowRight, MessageCircle, Phone, Plus } from "lucide-react";
-import { clinic } from "@/lib/data/clinic";
-import { faqs } from "@/lib/data/content";
-import { ButtonLink } from "@/components/ui/Button";
+import { ArrowRight, Plus } from "lucide-react";
+import { faqs, type Faq } from "@/lib/data/content";
+import { cn } from "@/lib/utils";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { Accent, SectionHeading } from "@/components/ui/SectionHeading";
+import { EmergencyBanner } from "./EmergencyCTA";
 
-export function FaqList({ limit }: { limit?: number }) {
-  const items = limit ? faqs.slice(0, limit) : faqs;
+const homepageFaqs: Faq[] = [
+  { question: "Will treatment hurt?", answer: "We use gentle techniques and local anaesthesia to keep you comfortable. Tell us if you're anxious — we'll go at your pace, and you can pause at any time." },
+  faqs.find((faq) => faq.question === "How do I book?")!,
+  { question: "Do you handle dental emergencies?", answer: "Yes. We keep same-day slots for severe toothache, swelling and broken or knocked-out teeth. Call our emergency number so we can arrange care as quickly as possible." },
+];
+
+export function FaqList({ limit, items, quiet = false }: { limit?: number; items?: Faq[]; quiet?: boolean }) {
+  const questions = items ?? (limit ? faqs.slice(0, limit) : faqs);
   return (
-    <div className="divide-y divide-navy-100 rounded-3xl bg-white px-6 ring-1 ring-navy-100 sm:px-8">
-      {items.map((f, i) => (
-        <details key={f.question} className="faq group py-1" open={i === 0}>
-          <summary className="flex cursor-pointer items-center justify-between gap-6 py-5 text-left text-[1.05rem] font-semibold tracking-tight text-navy-900 transition-colors hover:text-brand-700">
-            {f.question}
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-mist-100 text-navy-700 transition duration-300 group-open:rotate-45 group-open:bg-brand-600 group-open:text-white">
+    <div className={cn("divide-y divide-navy-100", quiet ? "border-y border-navy-100" : "rounded-3xl bg-white px-6 ring-1 ring-navy-100 sm:px-8")}>
+      {questions.map((faq, i) => (
+        <details key={faq.question} className="faq group py-1" open={i === 0}>
+          <summary className={cn("flex cursor-pointer items-center justify-between gap-6 py-5 text-left font-semibold tracking-tight text-navy-900 transition-colors hover:text-brand-700", quiet ? "text-base" : "text-[1.05rem]")}>
+            {faq.question}
+            <span className={cn("grid shrink-0 place-items-center transition duration-300 group-open:rotate-45", quiet ? "text-brand-600" : "size-9 rounded-full bg-mist-100 text-navy-700 group-open:bg-brand-600 group-open:text-white")}>
               <Plus className="size-4" aria-hidden />
             </span>
           </summary>
-          <p className="pr-12 pb-6 text-[0.97rem] leading-relaxed text-navy-500">{f.answer}</p>
+          <p className={cn("pb-6 leading-relaxed text-navy-500", quiet ? "pr-8 text-sm" : "pr-12 text-[0.97rem]")}>{faq.answer}</p>
         </details>
       ))}
     </div>
@@ -28,55 +34,19 @@ export function FaqList({ limit }: { limit?: number }) {
 
 export function FAQ() {
   return (
-    <section id="faq" className="py-20 sm:py-28">
+    <section id="faq">
       <Container>
-        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-          <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-28">
-              <SectionHeading
-                align="left"
-                eyebrow="FAQ"
-                title={
-                  <>
-                    Questions? We&apos;ve got <Accent>answers.</Accent>
-                  </>
-                }
-                description="Everything you might want to know before your visit. Can't find what you're looking for? Our team is happy to help."
-              />
-              <Reveal
-                delay={120}
-                className="mt-8 rounded-3xl bg-linear-to-br from-brand-50 to-mist-100 p-6 ring-1 ring-brand-100"
-              >
-                <p className="font-semibold text-navy-900">Still unsure? Talk to a real person.</p>
-                <p className="mt-1 text-sm text-navy-500">
-                  We usually reply on WhatsApp within 10 minutes during clinic hours.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <ButtonLink href={clinic.phoneHref} size="sm" variant="secondary">
-                    <Phone className="size-4 text-brand-600" aria-hidden />
-                    Call us
-                  </ButtonLink>
-                  <ButtonLink href={clinic.whatsappHref} external size="sm" variant="whatsapp">
-                    <MessageCircle className="size-4" aria-hidden />
-                    WhatsApp
-                  </ButtonLink>
-                </div>
-              </Reveal>
-            </div>
-          </div>
-
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+          <SectionHeading align="left" size="quiet" className="lg:col-span-5" eyebrow="Before your visit" title={<>Feel informed. <Accent>Feel comfortable.</Accent></>} />
           <Reveal delay={80} className="lg:col-span-7">
-            <FaqList limit={6} />
-            <Link
-              href="/contact#faq"
-              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900 transition-colors hover:text-brand-600"
-            >
-              View all questions
-              <ArrowRight className="size-4" aria-hidden />
+            <FaqList items={homepageFaqs} quiet />
+            <Link href="/contact#faq" className="mt-5 inline-flex items-center gap-2 py-1 text-sm font-semibold text-brand-700 transition-colors hover:text-navy-900">
+              View All Questions <ArrowRight className="size-4" aria-hidden />
             </Link>
           </Reveal>
         </div>
       </Container>
+      <EmergencyBanner compact className="mt-10" />
     </section>
   );
 }

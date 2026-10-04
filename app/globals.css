@@ -255,6 +255,10 @@
   transition-delay: var(--reveal-delay, 0ms);
 }
 
+.reveal-scale {
+  transform: translateY(18px) scale(0.97);
+}
+
 .reveal[data-visible="true"] {
   opacity: 1;
   transform: none;

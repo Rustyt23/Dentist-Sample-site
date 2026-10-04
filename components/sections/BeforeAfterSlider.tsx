@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { MoveHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import styles from "./BeforeAfterSlider.module.css";
 
 type BeforeAfterSliderProps = {
   src: string;
@@ -21,6 +22,22 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
   const [pos, setPos] = useState(50);
   const [touched, setTouched] = useState(false);
   const touchedRef = useRef(false);
+  const position = useRef(50);
+  const finishArmed = useRef(true);
+  const [shine, setShine] = useState(0);
+
+  const moveDivider = (next: number) => {
+    const value = clamp(next);
+    position.current = value;
+    setPos(value);
+    setTouched(true);
+    touchedRef.current = true;
+    if (value > 5) finishArmed.current = true;
+    if (value <= 1 && finishArmed.current) {
+      finishArmed.current = false;
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) setShine((count) => count + 1);
+    }
+  };
 
   // Gently sweep the divider once when the slider first scrolls into view, hinting that it's draggable.
   useEffect(() => {
@@ -36,7 +53,11 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
           [1100, 68],
           [1800, 50],
         ].forEach(([delay, value]) =>
-          timers.push(window.setTimeout(() => !touchedRef.current && setPos(value), delay)),
+          timers.push(window.setTimeout(() => {
+            if (touchedRef.current) return;
+            position.current = value;
+            setPos(value);
+          }, delay)),
         );
       },
       { threshold: 0.6 },
@@ -51,21 +72,17 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
   const update = (clientX: number) => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
-    setPos(clamp(((clientX - rect.left) / rect.width) * 100));
-    setTouched(true);
-    touchedRef.current = true;
+    moveDivider(((clientX - rect.left) / rect.width) * 100);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 4;
-    if (e.key === "ArrowLeft") setPos((p) => clamp(p - step));
-    else if (e.key === "ArrowRight") setPos((p) => clamp(p + step));
-    else if (e.key === "Home") setPos(0);
-    else if (e.key === "End") setPos(100);
+    if (e.key === "ArrowLeft") moveDivider(position.current - step);
+    else if (e.key === "ArrowRight") moveDivider(position.current + step);
+    else if (e.key === "Home") moveDivider(0);
+    else if (e.key === "End") moveDivider(100);
     else return;
     e.preventDefault();
-    setTouched(true);
-    touchedRef.current = true;
   };
 
   return (
@@ -82,6 +99,7 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         dragging.current = true;
+        finishArmed.current = true;
         update(e.clientX);
       }}
       onPointerMove={(e) => dragging.current && update(e.clientX)}
@@ -117,6 +135,8 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
           draggable={false}
         />
       </div>
+
+      {shine > 0 && <span key={shine} className={styles.shine} data-finish-shine={shine} aria-hidden />}
 
       <span className="pointer-events-none absolute top-4 left-4 rounded-full bg-navy-950/60 px-3 py-1 text-xs font-semibold tracking-wide text-white uppercase backdrop-blur">
         Before

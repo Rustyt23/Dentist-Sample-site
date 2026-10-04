@@ -7,7 +7,22 @@ import { Reveal } from "@/components/ui/Reveal";
 const symptoms = ["Severe toothache", "Swelling", "Broken or knocked-out tooth", "Bleeding gums"];
 
 /** Full-width emergency banner for page sections. */
-export function EmergencyBanner({ className }: { className?: string }) {
+export function EmergencyBanner({ className, compact = false }: { className?: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className={className}>
+        <Container>
+          <Reveal className="flex flex-col gap-4 rounded-2xl bg-brand-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <p className="text-lg font-semibold tracking-tight text-navy-900">Dental Emergency?</p>
+            <a href={clinic.emergencyPhoneHref} className="inline-flex items-center gap-2 py-1 text-sm font-semibold text-brand-700 transition-colors hover:text-navy-900">
+              <Phone className="size-4" aria-hidden />
+              Call Now <span className="font-normal">· {clinic.emergencyPhone}</span>
+            </a>
+          </Reveal>
+        </Container>
+      </div>
+    );
+  }
   return (
     <section aria-label="Dental emergencies" className={cn("py-6", className)}>
       <Container>

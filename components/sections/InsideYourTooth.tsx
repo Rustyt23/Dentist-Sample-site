@@ -118,7 +118,6 @@ const LAYERS: LayerStep[] = [
     decay: "Left untreated, the tooth may be lost — an implant replaces the root.",
     fact: "About two-thirds of a tooth sits below the gum",
     links: [{ label: "Dental Implants", href: "/treatments#dental-implants" }],
-    explainer: "implant",
   },
 ];
 
@@ -376,7 +375,7 @@ export function InsideYourTooth() {
       ref={sectionRef}
       id="inside-your-tooth"
       aria-labelledby="inside-your-tooth-title"
-      className="relative overflow-x-clip pt-16 pb-12 sm:pt-24 sm:pb-20"
+      className="relative overflow-x-clip"
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute top-1/4 -left-40 h-[30rem] w-[30rem] rounded-full bg-mist-100 blur-3xl" />

@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { EmergencyLink } from "@/components/sections/EmergencyCTA";
 import { Logo } from "./Logo";
+import { DesktopNav } from "./DesktopNav";
 
 function subscribeToScroll(callback: () => void) {
   window.addEventListener("scroll", callback, { passive: true });
@@ -61,34 +62,7 @@ export function Navbar() {
         >
           <Logo />
 
-          <nav aria-label="Main" className="hidden lg:block">
-            <ul className="flex items-center gap-1">
-              {navLinks.map((link) => {
-                const active = isActive(pathname, link.href);
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "relative rounded-full px-4 py-2 text-[0.92rem] font-medium transition-colors",
-                        active ? "text-navy-900" : "text-navy-500 hover:text-navy-900",
-                      )}
-                    >
-                      {link.label}
-                      <span
-                        className={cn(
-                          "absolute inset-x-0 -bottom-0.5 mx-auto h-1 w-1 rounded-full bg-brand-500 transition-opacity",
-                          active ? "opacity-100" : "opacity-0",
-                        )}
-                        aria-hidden
-                      />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          <DesktopNav pathname={pathname} />
 
           <div className="flex items-center gap-2">
             <a

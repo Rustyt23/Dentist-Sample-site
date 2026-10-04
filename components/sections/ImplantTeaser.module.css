@@ -1,0 +1,26 @@
+.teaser {
+  display: flex; align-items: center; gap: 24px;
+  padding: 24px 32px; border-radius: 20px; background: var(--color-mist-50);
+}
+.visual { flex-shrink: 0; width: 100px; height: 110px; }
+.screw, .abutment, .crown, .shine { opacity: 0; }
+.stages { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px; color: var(--color-navy-400); }
+.stages li + li::before { content: "→"; margin-right: 8px; color: var(--color-navy-300); }
+.teaser[data-started] .screw { animation: assemble 900ms ease-out both; }
+.teaser[data-started] .abutment { animation: assemble 900ms ease-out 1.2s both; }
+.teaser[data-started] .crown { animation: assemble 900ms ease-out 2.4s both; }
+.teaser[data-started] .shine { animation: shine 1.2s ease-in-out 3.6s both; }
+.teaser[data-started] .stages li { animation: label 600ms ease-out var(--stage-delay) both; }
+@keyframes assemble { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shine { 0% { opacity: 0; } 55%,100% { opacity: 1; } }
+@keyframes label { to { color: var(--color-brand-700); } }
+@media (max-width: 639px) {
+  .teaser { padding: 20px; gap: 16px; }
+  .visual { width: 64px; height: 90px; }
+  .stages { column-gap: 6px; font-size: 11px; }
+  .stages li + li::before { margin-right: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .teaser .screw, .teaser .abutment, .teaser .crown, .teaser .shine { animation: none; opacity: 1; transform: none; }
+  .teaser .stages li { animation: none; color: var(--color-brand-700); }
+}

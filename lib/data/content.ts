@@ -112,6 +112,10 @@ export const faqs: Faq[] = [
     answer:
       "We offer no-cost EMI options on treatments above ₹10,000 and provide detailed invoices for insurance and reimbursement claims. Your estimate is always shared in writing before treatment begins.",
   },
+  {
+    question: "How do I book?",
+    answer: "Book online by choosing your treatment, dentist and preferred appointment time. You can also call or WhatsApp our front desk for help.",
+  },
 ];
 
 export type GalleryCategory = "Reception" | "Treatment Rooms" | "Equipment" | "Interiors";
