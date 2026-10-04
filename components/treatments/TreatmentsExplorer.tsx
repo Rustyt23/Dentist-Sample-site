@@ -2,14 +2,20 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { ArrowRight, CalendarDays, Check, Clock3 } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Clock3, MoveHorizontal } from "lucide-react";
 import { treatmentCategories, treatments, type TreatmentCategory } from "@/lib/data/treatments";
 import { doctors } from "@/lib/data/doctors";
 import { cn, unsplash } from "@/lib/utils";
 import { TreatmentIcon } from "@/components/icons";
 import { ButtonLink } from "@/components/ui/Button";
+import { ExplainerTrigger, type ExplainerKind } from "@/components/explainers/TreatmentExplainer";
 
 type Filter = "All" | TreatmentCategory;
+
+const EXPLAINERS: Partial<Record<string, ExplainerKind>> = {
+  "root-canal": "rootCanal",
+  "dental-implants": "implant",
+};
 
 function DoctorsFor({ slug }: { slug: string }) {
   const team = doctors.filter((d) => d.treatments.includes(slug));
@@ -132,10 +138,26 @@ export function TreatmentsExplorer() {
                 {t.priceNote ? <span className="text-navy-400 sm:ml-auto">{t.priceNote}</span> : null}
               </div>
               <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <ButtonLink href={`/book?treatment=${t.slug}`} size="sm" className="w-full sm:w-auto">
-                  Book {t.name.toLowerCase().startsWith("dental") ? "a visit" : "this treatment"}
-                  <ArrowRight className="size-4" aria-hidden />
-                </ButtonLink>
+                <span className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <ButtonLink href={`/book?treatment=${t.slug}`} size="sm" className="w-full sm:w-auto">
+                    Book {t.name.toLowerCase().startsWith("dental") ? "a visit" : "this treatment"}
+                    <ArrowRight className="size-4" aria-hidden />
+                  </ButtonLink>
+                  {EXPLAINERS[t.slug] ? (
+                    <ExplainerTrigger kind={EXPLAINERS[t.slug]!} className="justify-center sm:justify-start" />
+                  ) : null}
+                  {t.slug === "braces-aligners" ? (
+                    <a
+                      href="#teeth-alignment"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-white py-1.5 pr-4 pl-1.5 text-sm font-semibold text-navy-900 ring-1 ring-navy-200 transition hover:ring-brand-300 sm:justify-start"
+                    >
+                      <span className="grid size-7 place-items-center rounded-full bg-brand-600 text-white">
+                        <MoveHorizontal className="size-4" aria-hidden />
+                      </span>
+                      See how teeth move
+                    </a>
+                  ) : null}
+                </span>
                 <DoctorsFor slug={t.slug} />
               </div>
             </div>

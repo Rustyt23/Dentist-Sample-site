@@ -2,6 +2,7 @@ import { Hero } from "@/components/sections/Hero";
 import { TrustSection } from "@/components/sections/TrustSection";
 import { PopularTreatments } from "@/components/sections/PopularTreatments";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
+import { InsideYourTooth } from "@/components/sections/InsideYourTooth";
 import { DoctorsSection } from "@/components/sections/DoctorsSection";
 import { SmileTransformations } from "@/components/sections/SmileTransformations";
 import { Testimonials } from "@/components/sections/Testimonials";
@@ -17,6 +18,7 @@ export default function HomePage() {
       <Hero />
       <TrustSection />
       <PopularTreatments />
+      <InsideYourTooth />
       <WhyChooseUs />
       <DoctorsSection />
       <SmileTransformations />

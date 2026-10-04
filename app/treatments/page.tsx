@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { Accent, SectionHeading } from "@/components/ui/SectionHeading";
 import { TreatmentsExplorer } from "@/components/treatments/TreatmentsExplorer";
+import { ImplantJourney } from "@/components/treatments/ImplantJourney";
+import { TeethAlignment } from "@/components/treatments/TeethAlignment";
 import { FinalCTA } from "@/components/sections/FinalCTA";
 import { EmergencyBanner } from "@/components/sections/EmergencyCTA";
 
@@ -70,6 +72,10 @@ export default function TreatmentsPage() {
           <TreatmentsExplorer />
         </Container>
       </section>
+
+      <ImplantJourney />
+
+      <TeethAlignment />
 
       <EmergencyBanner className="pb-20 sm:pb-24" />
 
