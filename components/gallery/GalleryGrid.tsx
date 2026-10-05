@@ -98,6 +98,9 @@ export function GalleryGrid() {
               alt={img.alt}
               fill
               sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              // The first row is above the fold — load it right away (it's the page's LCP image).
+              loading={i < 3 ? "eager" : undefined}
+              fetchPriority={i === 0 ? "high" : undefined}
               className="object-cover transition duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-linear-to-t from-navy-950/70 via-navy-950/0 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100" />

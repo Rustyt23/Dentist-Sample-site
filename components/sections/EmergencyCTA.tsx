@@ -33,7 +33,7 @@ export function EmergencyBanner({ className, compact = false }: { className?: st
               aria-hidden
             />
             <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex gap-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
                 <span className="relative grid size-14 shrink-0 place-items-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
                   <span
                     className="absolute inset-0 animate-ping rounded-2xl bg-red-200/40 [animation-duration:2.4s]"
@@ -62,10 +62,12 @@ export function EmergencyBanner({ className, compact = false }: { className?: st
               </div>
               <a
                 href={clinic.emergencyPhoneHref}
-                className="inline-flex h-14 shrink-0 items-center justify-center gap-2.5 rounded-full bg-red-600 px-7 font-semibold text-white shadow-[0_12px_28px_-10px_rgb(220_38_38/0.55)] transition duration-300 hover:-translate-y-0.5 hover:bg-red-700"
+                className="inline-flex h-14 shrink-0 items-center justify-center gap-2.5 rounded-full bg-red-600 px-7 font-semibold whitespace-nowrap text-white shadow-[0_12px_28px_-10px_rgb(220_38_38/0.55)] transition duration-300 hover:-translate-y-0.5 hover:bg-red-700"
               >
                 <Phone className="size-5" aria-hidden />
-                Call Now · {clinic.emergencyPhone}
+                {/* The smallest phones only have room for the number */}
+                <span className="max-[359px]:sr-only">Call Now · </span>
+                {clinic.emergencyPhone}
               </a>
             </div>
           </div>

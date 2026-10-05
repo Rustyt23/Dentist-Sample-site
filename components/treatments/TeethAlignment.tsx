@@ -374,12 +374,20 @@ export function TeethAlignment() {
                   </span>
                   <span className="text-navy-400 normal-case">{current.when}</span>
                 </p>
-                <h3 key={`h-${stage}`} className="animate-step-in mt-2 text-xl font-semibold tracking-tight">
-                  {current.label}
-                </h3>
-                <p key={`p-${stage}`} className="animate-step-in mt-2 text-[0.95rem] leading-relaxed text-navy-500">
-                  {current.text}
-                </p>
+                {/* Every stage is laid out in the same cell so the card keeps the tallest height
+                    and the page doesn't jump while the stages play */}
+                <div className="grid">
+                  {STEPS.map((s, i) => (
+                    <div
+                      key={s.label}
+                      aria-hidden={i !== stage}
+                      className={cn("[grid-area:1/1]", i === stage ? "animate-step-in" : "invisible")}
+                    >
+                      <h3 className="mt-2 text-xl font-semibold tracking-tight">{s.label}</h3>
+                      <p className="mt-2 text-[0.95rem] leading-relaxed text-navy-500">{s.text}</p>
+                    </div>
+                  ))}
+                </div>
                 {braces ? (
                   <p className="mt-4 border-t border-navy-100 pt-4 text-sm text-navy-500">
                     Typical treatment {braces.duration} · Braces {formatPrice(braces.price).toLowerCase()}

@@ -74,21 +74,28 @@ export function MapPlaceholder({ className }: { className?: string }) {
           <text x="520" y="322">
             100 FEET ROAD
           </text>
-          <text x="40" y="322">
+          {/* Labels stay inside x≈130–670 so they survive the side crop on narrow (square) maps */}
+          <text x="236" y="322">
             CMH ROAD
           </text>
           <text x="420" y="110" transform="rotate(82 420 110)">
             12TH MAIN
           </text>
-          <text x="56" y="420" fill="#5a9c8b">
-            DEFENCE COLONY PARK
+          {/* Phones: the info chip covers this corner */}
+          <text x="136" y="402" fill="#5a9c8b" className="max-sm:hidden">
+            <tspan>DEFENCE</tspan>
+            <tspan x="136" dy="18">
+              COLONY PARK
+            </tspan>
           </text>
         </g>
         <g>
           <circle cx="330" cy="153" r="9" fill="#ffffff" stroke="#157a73" strokeWidth="3" />
+          {/* Left of the station, clear of the 12th Main road */}
           <text
-            x="346"
-            y="140"
+            x="316"
+            y="138"
+            textAnchor="end"
             fontFamily="var(--font-jakarta), sans-serif"
             fontSize="12"
             fontWeight="600"

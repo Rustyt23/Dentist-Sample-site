@@ -50,11 +50,11 @@ export function ClinicDetails({ compact = false }: { compact?: boolean }) {
           </span>
           <div className="flex-1">
             <p className="text-sm font-medium text-navy-400">Opening hours</p>
-            <dl className="mt-2 space-y-1.5 text-[0.95rem]">
+            <dl className="mt-2 space-y-1.5 text-sm sm:text-[0.95rem]">
               {clinic.hours.map((h) => (
-                <div key={h.days} className="flex justify-between gap-4">
-                  <dt className="text-navy-600">{h.days}</dt>
-                  <dd className="text-right font-semibold text-navy-900">{h.time}</dd>
+                <div key={h.days} className="flex flex-wrap justify-between gap-x-3">
+                  <dt className="whitespace-nowrap text-navy-600">{h.days}</dt>
+                  <dd className="whitespace-nowrap font-semibold text-navy-900">{h.time}</dd>
                 </div>
               ))}
             </dl>

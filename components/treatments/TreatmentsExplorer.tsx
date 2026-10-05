@@ -137,19 +137,23 @@ export function TreatmentsExplorer() {
                 </span>
                 {t.priceNote ? <span className="text-navy-400 sm:ml-auto">{t.priceNote}</span> : null}
               </div>
-              <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {/* Wraps the "Led by" line underneath when a second button leaves no room for it */}
+              <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <span className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <ButtonLink href={`/book?treatment=${t.slug}`} size="sm" className="w-full sm:w-auto">
+                  <ButtonLink href={`/book?treatment=${t.slug}`} size="sm" className="w-full whitespace-nowrap sm:w-auto">
                     Book {t.name.toLowerCase().startsWith("dental") ? "a visit" : "this treatment"}
                     <ArrowRight className="size-4" aria-hidden />
                   </ButtonLink>
                   {EXPLAINERS[t.slug] ? (
-                    <ExplainerTrigger kind={EXPLAINERS[t.slug]!} className="justify-center sm:justify-start" />
+                    <ExplainerTrigger
+                      kind={EXPLAINERS[t.slug]!}
+                      className="justify-center whitespace-nowrap sm:justify-start"
+                    />
                   ) : null}
                   {t.slug === "braces-aligners" ? (
                     <a
                       href="#teeth-alignment"
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-white py-1.5 pr-4 pl-1.5 text-sm font-semibold text-navy-900 ring-1 ring-navy-200 transition hover:ring-brand-300 sm:justify-start"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-white py-1.5 pr-4 pl-1.5 text-sm font-semibold whitespace-nowrap text-navy-900 ring-1 ring-navy-200 transition hover:ring-brand-300 sm:justify-start"
                     >
                       <span className="grid size-7 place-items-center rounded-full bg-brand-600 text-white">
                         <MoveHorizontal className="size-4" aria-hidden />
