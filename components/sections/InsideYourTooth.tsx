@@ -233,7 +233,9 @@ function toVars(v: Visual): Record<string, string> {
   };
 }
 
-function visualAt(t: number): Visual {
+function visualAt(position: number): Visual {
+  // Clamp so an unexpected scroll value can never index past the defined states.
+  const t = Number.isFinite(position) ? Math.min(Math.max(position, 0), VISUALS.length - 1) : 0;
   const i = Math.floor(t);
   const k = t - i;
   const a = VISUALS[i];

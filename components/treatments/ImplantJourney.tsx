@@ -90,7 +90,9 @@ const VISUALS: Visual[] = [
 /** Assembled cross-section, all parts labelled, for reduced motion. */
 const STATIC_VISUAL: Visual = { ...VISUALS[4], heal: 0.35 };
 
-function visualAt(t: number): Visual {
+function visualAt(position: number): Visual {
+  // Clamp so an unexpected scroll value can never index past the defined states.
+  const t = Number.isFinite(position) ? Math.min(Math.max(position, 0), VISUALS.length - 1) : 0;
   const i = Math.floor(t);
   const k = t - i;
   const a = VISUALS[i];

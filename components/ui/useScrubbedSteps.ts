@@ -47,18 +47,26 @@ export function useScrubbedSteps({ sectionRef, stageRef, stepRefs, frame, reduce
 
     const update = () => {
       raf = 0;
+      // A final scroll can arrive after navigating away (refs already detached, listener not yet removed).
+      if (!section.isConnected) return;
+      const refs = stepRefs.current ?? [];
+      if (refs.length === 0 || refs.some((el) => !el?.isConnected)) return;
+      const steps = refs as HTMLElement[];
+
       const focus = focusLine(mobileFocus);
-      const tops = (stepRefs.current ?? []).map((el) => el?.getBoundingClientRect().top ?? Infinity);
+      const tops = steps.map((el) => el.getBoundingClientRect().top);
 
       let i = 0;
       tops.forEach((top, k) => {
         if (top < focus) i = k;
       });
       let t = i;
-      if (i < tops.length - 1) {
-        const frac = clamp01((focus - tops[i]) / (tops[i + 1] - tops[i]));
+      const span = tops[i + 1] - tops[i];
+      if (i < tops.length - 1 && span > 0) {
+        const frac = clamp01((focus - tops[i]) / span);
         t = i + smooth(clamp01((frac - 0.25) / 0.75));
       }
+      if (!Number.isFinite(t)) return;
       setActive(Math.round(t));
 
       const rect = section.getBoundingClientRect();
