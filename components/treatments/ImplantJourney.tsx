@@ -9,6 +9,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Accent, Eyebrow } from "@/components/ui/SectionHeading";
 import { useReducedMotion } from "@/components/ui/useMediaQuery";
+import { useAnimationVisibility } from "@/components/ui/useAnimationVisibility";
 import { clamp01, useScrubbedSteps } from "@/components/ui/useScrubbedSteps";
 import { ImplantStage } from "./implant/ImplantStage";
 
@@ -238,6 +239,8 @@ export function ImplantJourney() {
   const stageRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  useAnimationVisibility(sectionRef);
+
   const { active, goTo } = useScrubbedSteps({
     sectionRef,
     stageRef,
@@ -257,6 +260,7 @@ export function ImplantJourney() {
       ref={sectionRef}
       id="implant-journey"
       aria-labelledby="implant-journey-title"
+      data-animation-paused="true"
       className="relative overflow-x-clip pt-6 pb-12 sm:pb-20"
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -267,7 +271,7 @@ export function ImplantJourney() {
       <Container className="relative">
         <div className="lg:grid lg:grid-cols-12 lg:gap-12">
           {/* Pinned stage */}
-          <div className="sticky top-16 z-10 -mx-4 bg-white/95 px-4 pt-3 pb-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:top-24 lg:col-span-6 lg:mx-0 lg:flex lg:h-[calc(100svh-7rem)] lg:flex-col lg:justify-center lg:self-start lg:bg-transparent lg:px-0 lg:pb-0 lg:backdrop-blur-none">
+          <div className="sticky top-16 z-10 -mx-4 bg-white/98 px-4 pt-3 pb-3 sm:-mx-6 sm:px-6 lg:top-24 lg:col-span-6 lg:mx-0 lg:flex lg:h-[calc(100svh-7rem)] lg:flex-col lg:justify-center lg:self-start lg:bg-transparent lg:px-0 lg:pb-0">
             <div className="flex items-center gap-3 lg:flex-col lg:gap-6">
               <div
                 ref={stageRef}

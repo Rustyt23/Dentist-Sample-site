@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Container } from "@/components/ui/Container";
 import { Accent, Eyebrow } from "@/components/ui/SectionHeading";
 import { useReducedMotion } from "@/components/ui/useMediaQuery";
+import { useAnimationVisibility } from "@/components/ui/useAnimationVisibility";
 import { Dentition, DentitionDefs, applianceAt } from "./alignment/Dentition";
 import { LOWER_TEETH, PAINT_ORDER, UPPER_TEETH, crookedness, toothTransform, wireFor } from "./alignment/teeth";
 
@@ -45,6 +46,7 @@ const stepFor = (p: number) => (p < 0.2 ? 0 : p < 0.56 ? 1 : p < 0.9 ? 2 : 3);
 const clamp = (n: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, n));
 const ease = (n: number) => (n < 0.5 ? 4 * n * n * n : 1 - Math.pow(-2 * n + 2, 3) / 2);
 const afterLabel = (p: number) => (p > 0.995 ? "After" : `Month ${Math.round(p * MONTHS)}`);
+type TweenControl = { pause: () => void; resume: () => void; cancel: () => void };
 
 export function TeethAlignment() {
   const reduced = useReducedMotion();
@@ -61,15 +63,29 @@ export function TeethAlignment() {
   const upperWireRef = useRef<SVGPathElement>(null);
   const lowerWireRef = useRef<SVGPathElement>(null);
   const teethRefs = useRef<Record<string, SVGGElement | null>>({});
+  const shadeRefs = useRef<Record<string, SVGPathElement | null>>({});
+  const toothValues = useRef<Record<string, { transform: string; shade: string }>>({});
+  const modeRef = useRef(mode);
+  const stageIndex = useRef(3);
+  const lastLabel = useRef("After");
+  const lastAppliance = useRef("0.000");
   const progress = useRef(1);
   const split = useRef(50);
   const seq = useRef(0);
   const raf = useRef(0);
   const dragging = useRef(false);
   const played = useRef(false);
+  const paused = useRef(true);
+  const runningTween = useRef<TweenControl | null>(null);
+  const autoplayTimer = useRef<number | null>(null);
+  const dragBounds = useRef<DOMRect | null>(null);
+
+  useAnimationVisibility(sectionRef);
 
   const register = useCallback((id: string, el: SVGGElement | null) => {
     teethRefs.current[id] = el;
+    shadeRefs.current[id] = el?.querySelector<SVGPathElement>("[data-shade]") ?? null;
+    delete toothValues.current[id];
   }, []);
 
   /** Pose the "after" side for treatment progress p (0–1). */
@@ -79,19 +95,47 @@ export function TeethAlignment() {
       const el = teethRefs.current[t.id];
       if (!el) continue;
       const k = crookedness(t, p);
-      el.setAttribute("transform", toothTransform(t, k));
-      const shade = el.querySelector<SVGPathElement>("[data-shade]");
-      if (shade) shade.style.opacity = (t.shade * 0.5 * k).toFixed(3);
+      const transform = toothTransform(t, k);
+      const shadeValue = (t.shade * 0.5 * k).toFixed(3);
+      const previous = toothValues.current[t.id];
+      if (previous?.transform !== transform) el.setAttribute("transform", transform);
+      const shade = shadeRefs.current[t.id];
+      if (shade && previous?.shade !== shadeValue) shade.style.opacity = shadeValue;
+      toothValues.current[t.id] = { transform, shade: shadeValue };
     }
-    upperWireRef.current?.setAttribute("d", wireFor(UPPER_TEETH, p));
-    lowerWireRef.current?.setAttribute("d", wireFor(LOWER_TEETH, p));
-    svgRef.current?.style.setProperty("--appliance", applianceAt(p).toFixed(3));
-    if (afterTagRef.current) afterTagRef.current.textContent = afterLabel(p);
-    setStage(stepFor(p));
+    if (modeRef.current === "braces") {
+      upperWireRef.current?.setAttribute("d", wireFor(UPPER_TEETH, p));
+      lowerWireRef.current?.setAttribute("d", wireFor(LOWER_TEETH, p));
+    }
+    const appliance = applianceAt(p).toFixed(3);
+    if (appliance !== lastAppliance.current) {
+      svgRef.current?.style.setProperty("--appliance", appliance);
+      lastAppliance.current = appliance;
+    }
+    const label = afterLabel(p);
+    if (afterTagRef.current && label !== lastLabel.current) {
+      afterTagRef.current.textContent = label;
+      lastLabel.current = label;
+    }
+    const nextStage = stepFor(p);
+    if (nextStage !== stageIndex.current) {
+      stageIndex.current = nextStage;
+      setStage(nextStage);
+    }
   }, []);
+
+  useEffect(() => {
+    modeRef.current = mode;
+    // Bring previously hidden wires up to date when the patient switches to braces.
+    if (mode === "braces") {
+      upperWireRef.current?.setAttribute("d", wireFor(UPPER_TEETH, progress.current));
+      lowerWireRef.current?.setAttribute("d", wireFor(LOWER_TEETH, progress.current));
+    }
+  }, [mode]);
 
   /** Move the before/after divider (percentage from the left). */
   const setSplit = useCallback((pct: number) => {
+    if (pct === split.current) return;
     split.current = pct;
     if (beforeRef.current) beforeRef.current.style.clipPath = `inset(0 ${(100 - pct).toFixed(2)}% 0 0)`;
     if (dividerRef.current) dividerRef.current.style.left = `${pct.toFixed(2)}%`;
@@ -102,29 +146,82 @@ export function TeethAlignment() {
   const tween = useCallback(
     (from: number, to: number, ms: number, onUpdate: (v: number) => void, id: number) =>
       new Promise<boolean>((resolve) => {
-        const start = performance.now();
+        let elapsed = 0;
+        let lastTime: number | null = null;
+        let finished = false;
+        const finish = (completed: boolean) => {
+          if (finished) return;
+          finished = true;
+          cancelAnimationFrame(raf.current);
+          raf.current = 0;
+          if (runningTween.current === control) runningTween.current = null;
+          resolve(completed);
+        };
         const tick = (now: number) => {
-          if (seq.current !== id) return resolve(false);
-          const e = ease(clamp((now - start) / ms));
+          raf.current = 0;
+          if (seq.current !== id) return finish(false);
+          if (paused.current) { lastTime = null; return; }
+          if (lastTime !== null) elapsed += now - lastTime;
+          lastTime = now;
+          const e = ease(clamp(elapsed / ms));
           onUpdate(from + (to - from) * e);
           if (e < 1) raf.current = requestAnimationFrame(tick);
-          else resolve(true);
+          else finish(true);
         };
-        raf.current = requestAnimationFrame(tick);
+        const control: TweenControl = {
+          pause: () => {
+            cancelAnimationFrame(raf.current);
+            raf.current = 0;
+            lastTime = null;
+          },
+          resume: () => {
+            if (finished || raf.current || paused.current) return;
+            lastTime = performance.now();
+            raf.current = requestAnimationFrame(tick);
+          },
+          cancel: () => finish(false),
+        };
+        runningTween.current = control;
+        control.resume();
       }),
     [],
   );
 
-  const interrupt = () => {
+  const cancelPlayback = useCallback(() => {
     seq.current += 1;
+    runningTween.current?.cancel();
     cancelAnimationFrame(raf.current);
+    raf.current = 0;
+    if (autoplayTimer.current !== null) clearTimeout(autoplayTimer.current);
+    autoplayTimer.current = null;
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const sync = () => {
+      paused.current = section.hasAttribute("data-animation-paused");
+      if (paused.current) runningTween.current?.pause();
+      else runningTween.current?.resume();
+    };
+    section.addEventListener("animationvisibilitychange", sync);
+    sync();
+    return () => {
+      section.removeEventListener("animationvisibilitychange", sync);
+      cancelPlayback();
+    };
+  }, [cancelPlayback]);
+
+  const interrupt = () => {
+    cancelPlayback();
     played.current = true;
   };
 
   /** Full-view treatment playback, then settle into the before/after comparison. */
   const watch = useCallback(async () => {
-    const id = ++seq.current;
-    cancelAnimationFrame(raf.current);
+    cancelPlayback();
+    played.current = true;
+    const id = seq.current;
     if (reduced) {
       pose(1);
       setSplit(50);
@@ -133,10 +230,9 @@ export function TeethAlignment() {
     if (!(await tween(split.current, 0, 450, setSplit, id))) return;
     pose(0);
     if (!(await tween(0, 1, 4600, pose, id))) return;
-    await new Promise((r) => window.setTimeout(r, 350));
-    if (seq.current !== id) return;
+    if (!(await tween(0, 1, 350, () => {}, id))) return;
     await tween(0, 50, 750, setSplit, id);
-  }, [pose, reduced, setSplit, tween]);
+  }, [cancelPlayback, pose, reduced, setSplit, tween]);
 
   const goToStage = (i: number) => {
     interrupt();
@@ -156,7 +252,10 @@ export function TeethAlignment() {
         if (entry.isIntersecting && !played.current) {
           played.current = true;
           observer.disconnect();
-          window.setTimeout(() => void watch(), 300);
+          autoplayTimer.current = window.setTimeout(() => {
+            autoplayTimer.current = null;
+            void watch();
+          }, 300);
         }
       },
       { threshold: 0.4 },
@@ -164,13 +263,12 @@ export function TeethAlignment() {
     observer.observe(el);
     return () => {
       observer.disconnect();
-      seq.current += 1;
-      cancelAnimationFrame(raf.current);
+      cancelPlayback();
     };
-  }, [reduced, watch]);
+  }, [cancelPlayback, reduced, watch]);
 
   const fromPointer = (clientX: number) => {
-    const r = stageRef.current?.getBoundingClientRect();
+    const r = dragBounds.current;
     if (r) setSplit(clamp(((clientX - r.left) / r.width) * 100, 0, 100));
   };
 
@@ -230,13 +328,14 @@ export function TeethAlignment() {
                 onPointerDown={(e) => {
                   e.currentTarget.setPointerCapture(e.pointerId);
                   dragging.current = true;
+                  dragBounds.current = e.currentTarget.getBoundingClientRect();
                   interrupt();
                   setInteracted(true);
                   fromPointer(e.clientX);
                 }}
                 onPointerMove={(e) => dragging.current && fromPointer(e.clientX)}
-                onPointerUp={() => (dragging.current = false)}
-                onPointerCancel={() => (dragging.current = false)}
+                onPointerUp={() => { dragging.current = false; dragBounds.current = null; }}
+                onPointerCancel={() => { dragging.current = false; dragBounds.current = null; }}
                 className="relative aspect-[460/280] cursor-ew-resize touch-pan-y overflow-hidden rounded-[2rem] bg-linear-to-b from-white to-mist-100 shadow-lift ring-1 ring-navy-100 select-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-500"
               >
                 {/* After (animated) */}

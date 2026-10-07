@@ -1,14 +1,29 @@
+.before {
+  clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0);
+  transition: clip-path 700ms ease-in-out;
+}
+.divider {
+  transform: translateX(var(--split, 50%));
+  transition: transform 700ms ease-in-out;
+}
+.slider[data-interacted="true"] .before,
+.slider[data-interacted="true"] .divider {
+  transition: none;
+}
+.slider[data-interacted="true"] .hint {
+  opacity: 0;
+}
 .shine {
   position: absolute; inset: 0; pointer-events: none; overflow: hidden;
 }
 .shine::after {
   content: ""; position: absolute; top: -25%; left: -35%; width: 22%; height: 150%;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / .16), transparent);
-  transform: skewX(-16deg); animation: finish 850ms ease-out both;
+  animation: finish 850ms ease-out both;
 }
 @keyframes finish {
-  0% { left: -35%; opacity: 0; }
+  0% { transform: translateX(0) skewX(-16deg); opacity: 0; }
   20% { opacity: 1; }
-  100% { left: 120%; opacity: 0; }
+  100% { transform: translateX(705%) skewX(-16deg); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .shine { display: none; } }

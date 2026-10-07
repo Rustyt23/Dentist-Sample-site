@@ -17,7 +17,7 @@ export function MobileActionBar() {
   return (
     <nav
       aria-label="Quick actions"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-navy-100 bg-white/95 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_-12px_rgb(10_31_60/0.18)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-navy-100 bg-white/98 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_-12px_rgb(10_31_60/0.18)] md:hidden"
     >
       <div className="grid grid-cols-[1.35fr_1fr_1fr_1fr] gap-1.5">
         <Link

@@ -7,11 +7,17 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { Accent, SectionHeading } from "@/components/ui/SectionHeading";
 
-export function DoctorCard({ doctor }: { doctor: Doctor }) {
+export function DoctorCard({ doctor, centered = false }: { doctor: Doctor; centered?: boolean }) {
   return (
     <article className="group flex h-full flex-col">
       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-mist-100">
-        <Image src={unsplash(doctor.image, 900)} alt={doctor.imageAlt} fill sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw" className="object-cover object-top transition duration-700 group-hover:scale-[1.04]" />
+        <Image
+          src={unsplash(doctor.image, 1200, { height: 900, position: "top" })}
+          alt={doctor.imageAlt}
+          fill
+          sizes={`(min-width: 1280px) 384px, (min-width: 1024px) calc(33.333vw - 42.667px), (min-width: 640px) calc(50vw - ${centered ? 24 : 40}px), calc(100vw - 32px)`}
+          className="object-cover object-top transition duration-700 group-hover:scale-[1.04]"
+        />
       </div>
       <div className="pt-5">
         <h3 className="text-lg font-semibold tracking-tight">{doctor.name}</h3>
@@ -33,7 +39,7 @@ export function DoctorsSection() {
         <div className="mt-10 grid gap-10 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
           {doctors.map((doctor, i) => (
             <Reveal key={doctor.slug} delay={i * 80} scale className={i === 2 ? "sm:col-span-2 sm:mx-auto sm:w-1/2 lg:col-span-1 lg:w-full" : undefined}>
-              <DoctorCard doctor={doctor} />
+              <DoctorCard doctor={doctor} centered={i === 2} />
             </Reveal>
           ))}
         </div>

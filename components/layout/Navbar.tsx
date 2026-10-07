@@ -47,18 +47,32 @@ export function Navbar() {
     };
   }, [open]);
 
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  const closeOnNavigation = (event: React.MouseEvent<HTMLElement>) => {
+    if (open && event.target instanceof Element && event.target.closest("a")) setOpen(false);
+  };
+
   return (
     <>
       <header
+        onClick={closeOnNavigation}
         className={cn(
           "sticky top-0 z-50 transition-all duration-300",
           scrolled || open
-            ? "border-b border-navy-100 bg-white/90 shadow-[0_8px_30px_-12px_rgb(10_31_60/0.12)] backdrop-blur-xl"
-            : "border-b border-transparent bg-white/70 backdrop-blur-md",
+            ? "border-b border-navy-100 bg-white/98 shadow-[0_8px_30px_-12px_rgb(10_31_60/0.12)] lg:bg-white/90 lg:backdrop-blur-xl"
+            : "border-b border-transparent bg-white/98 lg:bg-white/70 lg:backdrop-blur-md",
         )}
       >
         <Container
-          className={cn("flex items-center justify-between transition-all duration-300", scrolled ? "h-16" : "h-20")}
+          className={cn("flex items-center justify-between transition-all duration-300", scrolled ? "h-16" : "h-16 lg:h-20")}
         >
           <Logo />
 
@@ -97,9 +111,9 @@ export function Navbar() {
       {/* Mobile menu — rendered outside <header> so backdrop-filter doesn't trap position: fixed */}
       <div
         id="mobile-menu"
+        onClick={closeOnNavigation}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[45] overflow-y-auto bg-white transition-all duration-300 lg:hidden",
-          scrolled ? "top-16" : "top-20",
+          "fixed inset-x-0 top-16 bottom-0 z-[45] overflow-y-auto bg-white transition-all duration-300 lg:hidden",
           open ? "visible opacity-100" : "invisible -translate-y-2 opacity-0",
         )}
       >

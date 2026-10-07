@@ -264,6 +264,24 @@
   transform: none;
 }
 
+/* Keep the full scenes alive, but release animation work and layers offscreen. */
+[data-animation-paused="true"] *,
+[data-animation-paused="true"] *::before,
+[data-animation-paused="true"] *::after {
+  animation-play-state: paused !important;
+}
+
+[data-animation-paused="true"] [class*="will-change"] {
+  will-change: auto !important;
+}
+
+@media (max-width: 767px) {
+  .hero-enter {
+    animation-duration: 0.45s;
+    animation-delay: 0ms !important;
+  }
+}
+
 /* Smooth FAQ accordion where supported (progressive enhancement) */
 @supports (interpolate-size: allow-keywords) {
   :root {

@@ -27,7 +27,13 @@ export function GalleryPreview() {
               <Reveal key={image.id} delay={i * 80} scale>
                 <Link href="/gallery" className="group block">
                   <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-mist-100">
-                    <Image src={unsplash(image.id, 900)} alt={image.alt} fill sizes="(min-width: 640px) 33vw, 100vw" className="object-cover transition duration-700 group-hover:scale-105" />
+                    <Image
+                      src={unsplash(image.id, 1000)}
+                      alt={image.alt}
+                      fill
+                      sizes="(min-width: 1280px) 392px, (min-width: 1024px) calc(33.333vw - 34.667px), (min-width: 640px) calc(33.333vw - 29.333px), calc(100vw - 32px)"
+                      className="object-cover transition duration-700 group-hover:scale-105"
+                    />
                   </div>
                   <p className="mt-3 text-sm text-navy-500">{image.caption}</p>
                 </Link>

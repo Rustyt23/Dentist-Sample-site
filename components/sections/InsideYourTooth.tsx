@@ -3,32 +3,25 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { ArrowRight, CalendarCheck, ChevronDown, Hand, Sparkles } from "lucide-react";
-import { getTreatment } from "@/lib/data/treatments";
 import { cn } from "@/lib/utils";
 import { buttonClasses } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Accent, Eyebrow } from "@/components/ui/SectionHeading";
 import { useReducedMotion } from "@/components/ui/useMediaQuery";
+import { useAnimationVisibility } from "@/components/ui/useAnimationVisibility";
 import { clamp01, useScrubbedSteps } from "@/components/ui/useScrubbedSteps";
 import { ExplainerTrigger, type ExplainerKind } from "@/components/explainers/TreatmentExplainer";
 import { HOTSPOTS, ToothStage, type Layer } from "./inside-tooth/ToothStage";
 
 /* ───────────────────────── Content ───────────────────────── */
 
-const rupees = (price: string | undefined) => Number((price ?? "0").replace(/[^\d]/g, ""));
-const formatRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-
-const checkup = getTreatment("dental-checkup");
-const rootCanal = getTreatment("root-canal");
-const crown = getTreatment("crowns-bridges");
-const implant = getTreatment("dental-implants");
+type ToothPrices = Record<Layer, string>;
 
 /** What happens if decay reaches each layer — the cost of waiting. */
-const DECAY: Record<Layer, { fix: string; short: string; price: string; href: string; dot: string; tint: string }> = {
+const DECAY: Record<Layer, { fix: string; short: string; href: string; dot: string; tint: string }> = {
   enamel: {
     fix: "Check-up & fluoride",
     short: "Fluoride",
-    price: formatRupees(rupees(checkup?.price)),
     href: "/treatments#dental-checkup",
     dot: "bg-brand-500",
     tint: "bg-brand-50 ring-brand-100",
@@ -36,7 +29,6 @@ const DECAY: Record<Layer, { fix: string; short: string; price: string; href: st
   dentin: {
     fix: "Tooth-coloured filling",
     short: "Filling",
-    price: "₹1,500",
     href: "/treatments#dental-checkup",
     dot: "bg-amber-400",
     tint: "bg-amber-50 ring-amber-100",
@@ -44,7 +36,6 @@ const DECAY: Record<Layer, { fix: string; short: string; price: string; href: st
   pulp: {
     fix: "Root canal + crown",
     short: "Root canal",
-    price: formatRupees(rupees(rootCanal?.price) + rupees(crown?.price)),
     href: "/treatments#root-canal",
     dot: "bg-orange-500",
     tint: "bg-orange-50 ring-orange-100",
@@ -52,7 +43,6 @@ const DECAY: Record<Layer, { fix: string; short: string; price: string; href: st
   root: {
     fix: "Dental implant",
     short: "Implant",
-    price: formatRupees(rupees(implant?.price)),
     href: "/treatments#dental-implants",
     dot: "bg-red-500",
     tint: "bg-red-50 ring-red-100",
@@ -252,7 +242,7 @@ const STATIC_STYLE = { perspective: "1200px", ...toVars(STATIC_VISUAL) } as Reac
 
 /* ───────────────────────── Layer navigation ───────────────────────── */
 
-function LayerPanel({ active, onSelect }: { active: number; onSelect: (step: number) => void }) {
+function LayerPanel({ active, onSelect, prices }: { active: number; onSelect: (step: number) => void; prices: ToothPrices }) {
   const activeLayer = LAYERS[active - 1];
   const decay = activeLayer ? DECAY[activeLayer.layer] : null;
 
@@ -293,7 +283,7 @@ function LayerPanel({ active, onSelect }: { active: number; onSelect: (step: num
                       <span className={cn("size-1.5 shrink-0 rounded-full", d.dot)} aria-hidden />
                       {d.short}
                     </span>
-                    <span className="mt-0.5 block font-semibold text-navy-900">from {d.price}</span>
+                    <span className="mt-0.5 block font-semibold text-navy-900">from {prices[spot.layer]}</span>
                   </span>
                 ) : null}
               </span>
@@ -315,7 +305,7 @@ function LayerPanel({ active, onSelect }: { active: number; onSelect: (step: num
               <span className="font-semibold text-navy-900">
                 If decay reaches the {activeLayer.name.toLowerCase()}:
               </span>{" "}
-              {decay.fix} · from {decay.price}
+              {decay.fix} · from {prices[activeLayer.layer]}
             </p>
             <span className="flex shrink-0 gap-1" aria-hidden>
               {LAYERS.map((l, i) => (
@@ -342,11 +332,13 @@ function LayerPanel({ active, onSelect }: { active: number; onSelect: (step: num
 
 /* ───────────────────────── Component ───────────────────────── */
 
-export function InsideYourTooth() {
+export function InsideYourTooth({ prices }: { prices: ToothPrices }) {
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useAnimationVisibility(sectionRef);
 
   // Scroll position → continuous layer state, written straight to CSS variables (no re-render per frame).
   const { active, goTo } = useScrubbedSteps({
@@ -354,8 +346,11 @@ export function InsideYourTooth() {
     stageRef,
     stepRefs,
     reduced,
-    frame: (t, progress) =>
-      reduced ? null : { ...toVars(visualAt(t)), "--tilt": Math.sin(progress * Math.PI * 2).toFixed(3) },
+    frame: (t, progress) => {
+      if (reduced) return null;
+      const tilt = window.innerWidth >= 1024 ? Math.sin(progress * Math.PI * 2) : 0;
+      return { ...toVars(visualAt(t)), "--tilt": tilt.toFixed(3) };
+    },
   });
 
   // Desktop pointer parallax.
@@ -377,6 +372,7 @@ export function InsideYourTooth() {
       ref={sectionRef}
       id="inside-your-tooth"
       aria-labelledby="inside-your-tooth-title"
+      data-animation-paused="true"
       className="relative overflow-x-clip"
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -387,7 +383,7 @@ export function InsideYourTooth() {
       <Container className="relative">
         <div className="lg:grid lg:grid-cols-12 lg:gap-12">
           {/* Pinned stage */}
-          <div className="sticky top-16 z-10 -mx-4 bg-white/95 px-4 pt-3 pb-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:top-24 lg:col-span-6 lg:mx-0 lg:flex lg:h-[calc(100svh-7rem)] lg:flex-col lg:justify-center lg:self-start lg:bg-transparent lg:px-0 lg:pb-0 lg:backdrop-blur-none">
+          <div className="sticky top-16 z-10 -mx-4 bg-white/98 px-4 pt-3 pb-3 sm:-mx-6 sm:px-6 lg:top-24 lg:col-span-6 lg:mx-0 lg:flex lg:h-[calc(100svh-7rem)] lg:flex-col lg:justify-center lg:self-start lg:bg-transparent lg:px-0 lg:pb-0">
             <div className="flex items-center gap-3 lg:flex-col lg:gap-6">
               <div
                 ref={stageRef}
@@ -402,8 +398,10 @@ export function InsideYourTooth() {
                   <div className="absolute inset-[12%] rounded-full border border-mist-200" />
                 </div>
 
+                {/* Click-through: in a preserve-3d scene, whichever half of the tooth tilts behind this
+                    plane would otherwise swallow clicks meant for the hotspots (they opt back in) */}
                 <div
-                  className="absolute inset-0"
+                  className="pointer-events-none absolute inset-0"
                   style={{
                     transform: reduced
                       ? undefined
@@ -411,7 +409,13 @@ export function InsideYourTooth() {
                     transformStyle: "preserve-3d",
                   }}
                 >
-                  <div className={cn("absolute inset-0", !reduced && "lg:animate-tooth-sway")}>
+                  {/* The sway pauses under the pointer so the hotspots hold still to be clicked */}
+                  <div
+                    className={cn(
+                      "absolute inset-0",
+                      !reduced && "lg:animate-tooth-sway lg:hover:[animation-play-state:paused]",
+                    )}
+                  >
                     <div
                       className="absolute inset-0"
                       style={{
@@ -456,7 +460,7 @@ export function InsideYourTooth() {
                   : null}
               </div>
 
-              <LayerPanel active={active} onSelect={goTo} />
+              <LayerPanel active={active} onSelect={goTo} prices={prices} />
             </div>
 
             <p className="sr-only" aria-live="polite">
@@ -535,7 +539,7 @@ export function InsideYourTooth() {
                         </span>
                         <span className="mt-0.5 block text-sm leading-snug text-navy-700">{l.decay}</span>
                         <span className="mt-1 block text-sm font-semibold text-navy-900">
-                          {d.fix} · from {d.price}
+                          {d.fix} · from {prices[l.layer]}
                         </span>
                       </span>
                       <ArrowRight
@@ -595,7 +599,7 @@ export function InsideYourTooth() {
                           {i === 0 ? "Treat early" : i === 3 ? "Treat late" : `Stage ${i + 1}`}
                         </span>
                         <span className="mt-0.5 block text-sm leading-snug text-white">{d.fix}</span>
-                        <span className="mt-1 block text-base font-semibold text-white">{d.price}</span>
+                        <span className="mt-1 block text-base font-semibold text-white">{prices[l.layer]}</span>
                       </li>
                     );
                   })}

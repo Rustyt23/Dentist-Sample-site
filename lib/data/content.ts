@@ -226,6 +226,8 @@ export type Transformation = {
   duration: string;
   image: string;
   alt: string;
+  /** Center crop at the 1600px source width, preserving both display aspect ratios. */
+  cropHeight?: number;
   /** CSS filter applied to the "before" view to illustrate the change */
   beforeFilter: string;
 };
@@ -239,6 +241,7 @@ export const transformations: Transformation[] = [
     duration: "1 session · 60 minutes",
     image: "1654373535457-383a0a4d00f9",
     alt: "Close-up of a smile with bright, even teeth",
+    cropHeight: 1200,
     beforeFilter: "sepia(0.55) saturate(1.35) brightness(0.86) contrast(0.92) hue-rotate(-8deg)",
   },
   {
@@ -249,6 +252,7 @@ export const transformations: Transformation[] = [
     duration: "3 visits · 3 weeks",
     image: "1769559893692-c6d0623bf8e4",
     alt: "Close-up of a confident smile after a smile makeover",
+    cropHeight: 1200,
     beforeFilter: "sepia(0.6) saturate(1.2) brightness(0.84) contrast(0.9)",
   },
   {

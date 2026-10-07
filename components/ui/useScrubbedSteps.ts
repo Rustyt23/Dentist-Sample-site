@@ -32,6 +32,8 @@ type Options = {
  */
 export function useScrubbedSteps({ sectionRef, stageRef, stepRefs, frame, reduced, mobileFocus = 0.56 }: Options) {
   const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
+  const invalidateRef = useRef<(() => void) | null>(null);
   const frameRef = useRef(frame);
   useEffect(() => {
     frameRef.current = frame;
@@ -44,65 +46,114 @@ export function useScrubbedSteps({ sectionRef, stageRef, stepRefs, frame, reduce
 
     let raf = 0;
     let near = false;
+    let dirty = true;
+    let disposed = false;
+    let geometry: { tops: number[]; top: number; height: number; focus: number; viewportHeight: number } | null = null;
+    const written = new Map<string, string>();
+
+    // Document coordinates stay stable during scrolling. Re-measure only after a layout change.
+    const measure = () => {
+      const refs = stepRefs.current ?? [];
+      if (refs.length === 0 || refs.some((el) => !el?.isConnected)) return false;
+      const scrollY = window.scrollY;
+      const rect = section.getBoundingClientRect();
+      geometry = {
+        tops: (refs as HTMLElement[]).map((el) => el.getBoundingClientRect().top + scrollY),
+        top: rect.top + scrollY,
+        height: rect.height,
+        focus: focusLine(mobileFocus),
+        viewportHeight: window.innerHeight,
+      };
+      dirty = false;
+      return true;
+    };
 
     const update = () => {
       raf = 0;
       // A final scroll can arrive after navigating away (refs already detached, listener not yet removed).
-      if (!section.isConnected) return;
-      const refs = stepRefs.current ?? [];
-      if (refs.length === 0 || refs.some((el) => !el?.isConnected)) return;
-      const steps = refs as HTMLElement[];
-
-      const focus = focusLine(mobileFocus);
-      const tops = steps.map((el) => el.getBoundingClientRect().top);
+      if (disposed || !near || document.hidden || !section.isConnected) return;
+      if ((dirty || !geometry) && !measure()) return;
+      const { tops, top, height, focus, viewportHeight } = geometry!;
+      const readingLine = window.scrollY + focus;
 
       let i = 0;
       tops.forEach((top, k) => {
-        if (top < focus) i = k;
+        if (top < readingLine) i = k;
       });
       let t = i;
       const span = tops[i + 1] - tops[i];
       if (i < tops.length - 1 && span > 0) {
-        const frac = clamp01((focus - tops[i]) / span);
+        const frac = clamp01((readingLine - tops[i]) / span);
         t = i + smooth(clamp01((frac - 0.25) / 0.75));
       }
       if (!Number.isFinite(t)) return;
-      setActive(Math.round(t));
+      const nextActive = Math.round(t);
+      if (nextActive !== activeRef.current) {
+        activeRef.current = nextActive;
+        setActive(nextActive);
+      }
 
-      const rect = section.getBoundingClientRect();
-      const progress = clamp01((window.innerHeight - rect.top) / (rect.height + window.innerHeight));
+      const progress = clamp01((viewportHeight - (top - window.scrollY)) / (height + viewportHeight));
       const vars = frameRef.current(t, progress);
-      if (vars) for (const key in vars) stage.style.setProperty(key, vars[key]);
+      if (vars) for (const key in vars) {
+        if (written.get(key) === vars[key]) continue;
+        stage.style.setProperty(key, vars[key]);
+        written.set(key, vars[key]);
+      }
     };
 
     const onScroll = () => {
-      if (near && !raf) raf = requestAnimationFrame(update);
+      if (near && !document.hidden && !raf) raf = requestAnimationFrame(update);
     };
+    const invalidate = () => {
+      dirty = true;
+      onScroll();
+    };
+    invalidateRef.current = invalidate;
 
     // Only track scrolling while the section is on (or near) screen.
     const observer = new IntersectionObserver(
       ([entry]) => {
         near = entry.isIntersecting;
-        if (near) onScroll();
+        if (near) invalidate();
+        else {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
       },
       { rootMargin: "200px 0px" },
     );
+    const resizeObserver = new ResizeObserver(invalidate);
+    // Body changes cover content above the section, including image/font layout shifts.
+    resizeObserver.observe(document.body);
+    resizeObserver.observe(section);
+    stepRefs.current.forEach((el) => { if (el) resizeObserver.observe(el); });
     observer.observe(section);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener("resize", invalidate);
+    window.addEventListener("load", invalidate);
+    document.addEventListener("visibilitychange", invalidate);
+    document.fonts?.addEventListener("loadingdone", invalidate);
     return () => {
+      disposed = true;
+      if (invalidateRef.current === invalidate) invalidateRef.current = null;
       observer.disconnect();
+      resizeObserver.disconnect();
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", invalidate);
+      window.removeEventListener("load", invalidate);
+      document.removeEventListener("visibilitychange", invalidate);
+      document.fonts?.removeEventListener("loadingdone", invalidate);
       cancelAnimationFrame(raf);
     };
-  }, [sectionRef, stageRef, stepRefs, mobileFocus]);
+  }, [sectionRef, stageRef, stepRefs, mobileFocus, reduced]);
 
   /** Scroll so a step sits on the reading line — the scrubbed animation plays on the way there. */
   const goTo = (step: number) => {
     const el = stepRefs.current?.[step];
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - focusLine(mobileFocus) + 4;
+    invalidateRef.current?.();
     window.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
   };
 

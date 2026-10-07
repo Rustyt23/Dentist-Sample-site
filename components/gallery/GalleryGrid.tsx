@@ -97,7 +97,7 @@ export function GalleryGrid() {
               src={unsplash(img.id, 1000)}
               alt={img.alt}
               fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1280px) 394.667px, (min-width: 1024px) calc(33.333vw - 32px), (min-width: 640px) calc(50vw - 32px), calc(100vw - 32px)"
               // The first row is above the fold — load it right away (it's the page's LCP image).
               loading={i < 3 ? "eager" : undefined}
               fetchPriority={i === 0 ? "high" : undefined}

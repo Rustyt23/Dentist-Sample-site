@@ -19,19 +19,32 @@ const clamp = (n: number) => Math.min(100, Math.max(0, n));
 export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeAfterSliderProps) {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const [pos, setPos] = useState(50);
-  const [touched, setTouched] = useState(false);
   const touchedRef = useRef(false);
   const position = useRef(50);
+  const bounds = useRef<{ left: number; width: number } | null>(null);
+  const frame = useRef(0);
+  const pointerX = useRef(0);
   const finishArmed = useRef(true);
   const [shine, setShine] = useState(0);
 
-  const moveDivider = (next: number) => {
+  const paintDivider = (next: number) => {
+    const el = ref.current;
+    if (!el) return;
     const value = clamp(next);
     position.current = value;
-    setPos(value);
-    setTouched(true);
+    el.style.setProperty("--split", `${value}%`);
+    const rounded = String(Math.round(value));
+    if (el.getAttribute("aria-valuenow") !== rounded) {
+      el.setAttribute("aria-valuenow", rounded);
+      el.setAttribute("aria-valuetext", `${rounded}% before`);
+    }
+  };
+
+  const moveDivider = (next: number) => {
+    const value = clamp(next);
     touchedRef.current = true;
+    ref.current?.setAttribute("data-interacted", "true");
+    paintDivider(value);
     if (value > 5) finishArmed.current = true;
     if (value <= 1 && finishArmed.current) {
       finishArmed.current = false;
@@ -55,8 +68,7 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
         ].forEach(([delay, value]) =>
           timers.push(window.setTimeout(() => {
             if (touchedRef.current) return;
-            position.current = value;
-            setPos(value);
+            paintDivider(value);
           }, delay)),
         );
       },
@@ -70,10 +82,51 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
   }, []);
 
   const update = (clientX: number) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rect = bounds.current;
+    if (!rect || rect.width <= 0) return;
     moveDivider(((clientX - rect.left) / rect.width) * 100);
   };
+
+  const queueUpdate = (clientX: number) => {
+    pointerX.current = clientX;
+    if (frame.current) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      update(pointerX.current);
+    });
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    cancelAnimationFrame(frame.current);
+    frame.current = 0;
+    update(event.clientX);
+    dragging.current = false;
+    bounds.current = null;
+  };
+
+  const cancelDrag = () => {
+    cancelAnimationFrame(frame.current);
+    frame.current = 0;
+    dragging.current = false;
+    bounds.current = null;
+  };
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const refreshBounds = () => {
+      if (dragging.current) bounds.current = el.getBoundingClientRect();
+    };
+    const observer = new ResizeObserver(refreshBounds);
+    observer.observe(el);
+    window.addEventListener("resize", refreshBounds);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", refreshBounds);
+      cancelAnimationFrame(frame.current);
+    };
+  }, []);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 4;
@@ -93,19 +146,23 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
       aria-label="Before and after comparison. Use arrow keys to move the divider."
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={Math.round(pos)}
-      aria-valuetext={`${Math.round(pos)}% before`}
+      aria-valuenow={50}
+      aria-valuetext="50% before"
       onKeyDown={onKeyDown}
       onPointerDown={(e) => {
+        if (!e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
+        bounds.current = e.currentTarget.getBoundingClientRect();
         e.currentTarget.setPointerCapture(e.pointerId);
         dragging.current = true;
-        finishArmed.current = true;
         update(e.clientX);
       }}
-      onPointerMove={(e) => dragging.current && update(e.clientX)}
-      onPointerUp={() => (dragging.current = false)}
-      onPointerCancel={() => (dragging.current = false)}
+      onPointerMove={(e) => dragging.current && queueUpdate(e.clientX)}
+      onPointerUp={endDrag}
+      onPointerCancel={cancelDrag}
+      onLostPointerCapture={cancelDrag}
+      style={{ "--split": "50%" } as React.CSSProperties}
       className={cn(
+        styles.slider,
         "group relative cursor-ew-resize touch-pan-y overflow-hidden rounded-[1.75rem] bg-navy-800 select-none focus-visible:outline-brand-300",
         className,
       )}
@@ -115,21 +172,20 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
         src={src}
         alt={`After: ${alt}`}
         fill
-        sizes="(min-width: 1024px) 55vw, 100vw"
+        sizes="(min-width: 1312px) 1216px, (min-width: 1024px) calc(100vw - 96px), (min-width: 640px) calc(100vw - 80px), calc(100vw - 48px)"
         className="pointer-events-none object-cover"
         draggable={false}
       />
 
       {/* Before (clipped) */}
       <div
-        className={cn("absolute inset-0", !touched && "transition-[clip-path] duration-700 ease-in-out")}
-        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+        className={cn("absolute inset-0", styles.before)}
       >
         <Image
           src={src}
           alt={`Before: ${alt}`}
           fill
-          sizes="(min-width: 1024px) 55vw, 100vw"
+          sizes="(min-width: 1312px) 1216px, (min-width: 1024px) calc(100vw - 96px), (min-width: 640px) calc(100vw - 80px), calc(100vw - 48px)"
           className="pointer-events-none object-cover"
           style={{ filter: beforeFilter }}
           draggable={false}
@@ -147,11 +203,7 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
 
       {/* Divider + handle */}
       <div
-        className={cn(
-          "pointer-events-none absolute inset-y-0",
-          !touched && "transition-[left] duration-700 ease-in-out",
-        )}
-        style={{ left: `${pos}%` }}
+        className={cn("pointer-events-none absolute inset-0", styles.divider)}
       >
         <div className="absolute inset-y-0 -left-px w-0.5 bg-white/90 shadow-[0_0_12px_rgb(0_0_0/0.25)]" />
         <div className="absolute top-1/2 left-0 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-navy-900 shadow-lift ring-4 ring-white/30 transition-transform group-active:scale-95">
@@ -162,7 +214,7 @@ export function BeforeAfterSlider({ src, alt, beforeFilter, className }: BeforeA
       <span
         className={cn(
           "pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-navy-950/60 px-4 py-1.5 text-xs font-medium text-white backdrop-blur transition-opacity duration-500",
-          touched ? "opacity-0" : "opacity-100",
+          styles.hint,
         )}
       >
         Drag to compare

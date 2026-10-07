@@ -9,6 +9,16 @@ import { Testimonials } from "@/components/sections/Testimonials";
 import { GalleryPreview } from "@/components/sections/GalleryPreview";
 import { FAQ } from "@/components/sections/FAQ";
 import { VisitClinic } from "@/components/sections/VisitClinic";
+import { getTreatment } from "@/lib/data/treatments";
+
+const price = (slug: string) => Number((getTreatment(slug)?.price ?? "0").replace(/[^\d]/g, ""));
+const rupees = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
+const toothPrices = {
+  enamel: rupees(price("dental-checkup")),
+  dentin: "₹1,500",
+  pulp: rupees(price("root-canal") + price("crowns-bridges")),
+  root: rupees(price("dental-implants")),
+};
 
 export default function HomePage() {
   return (
@@ -17,7 +27,7 @@ export default function HomePage() {
       <TrustSection />
       <div className="space-y-16 py-16 sm:space-y-20 sm:py-20 lg:space-y-28 lg:py-28">
         <PopularTreatments />
-        <InsideYourTooth />
+        <InsideYourTooth prices={toothPrices} />
         <WhyChooseUs />
         <DoctorsSection />
         <SmileTransformations />
